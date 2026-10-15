@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+dataset/printed/
+dataset.npz
+*.zip
+preprocess_check.png
+dots_check.png

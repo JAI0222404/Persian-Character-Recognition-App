@@ -1,0 +1,200 @@
+[
+  {
+    "index": 0,
+    "char": "ا",
+    "name": "Alef",
+    "translit": "a"
+  },
+  {
+    "index": 1,
+    "char": "آ",
+    "name": "Alef-madda",
+    "translit": "aa"
+  },
+  {
+    "index": 2,
+    "char": "ب",
+    "name": "Be",
+    "translit": "b"
+  },
+  {
+    "index": 3,
+    "char": "پ",
+    "name": "Pe",
+    "translit": "p"
+  },
+  {
+    "index": 4,
+    "char": "ت",
+    "name": "Te",
+    "translit": "t"
+  },
+  {
+    "index": 5,
+    "char": "ث",
+    "name": "Se (3 dots)",
+    "translit": "s"
+  },
+  {
+    "index": 6,
+    "char": "ج",
+    "name": "Jim",
+    "translit": "j"
+  },
+  {
+    "index": 7,
+    "char": "چ",
+    "name": "Che",
+    "translit": "ch"
+  },
+  {
+    "index": 8,
+    "char": "ح",
+    "name": "He (jimi)",
+    "translit": "h"
+  },
+  {
+    "index": 9,
+    "char": "خ",
+    "name": "Khe",
+    "translit": "kh"
+  },
+  {
+    "index": 10,
+    "char": "د",
+    "name": "Dal",
+    "translit": "d"
+  },
+  {
+    "index": 11,
+    "char": "ذ",
+    "name": "Zal",
+    "translit": "z"
+  },
+  {
+    "index": 12,
+    "char": "ر",
+    "name": "Re",
+    "translit": "r"
+  },
+  {
+    "index": 13,
+    "char": "ز",
+    "name": "Ze",
+    "translit": "z"
+  },
+  {
+    "index": 14,
+    "char": "ژ",
+    "name": "Zhe",
+    "translit": "zh"
+  },
+  {
+    "index": 15,
+    "char": "س",
+    "name": "Sin",
+    "translit": "s"
+  },
+  {
+    "index": 16,
+    "char": "ش",
+    "name": "Shin",
+    "translit": "sh"
+  },
+  {
+    "index": 17,
+    "char": "ص",
+    "name": "Sad",
+    "translit": "s"
+  },
+  {
+    "index": 18,
+    "char": "ض",
+    "name": "Zad",
+    "translit": "z"
+  },
+  {
+    "index": 19,
+    "char": "ط",
+    "name": "Ta",
+    "translit": "t"
+  },
+  {
+    "index": 20,
+    "char": "ظ",
+    "name": "Za",
+    "translit": "z"
+  },
+  {
+    "index": 21,
+    "char": "ع",
+    "name": "Ayn",
+    "translit": "'"
+  },
+  {
+    "index": 22,
+    "char": "غ",
+    "name": "Ghayn",
+    "translit": "gh"
+  },
+  {
+    "index": 23,
+    "char": "ف",
+    "name": "Fe",
+    "translit": "f"
+  },
+  {
+    "index": 24,
+    "char": "ق",
+    "name": "Qaf",
+    "translit": "gh"
+  },
+  {
+    "index": 25,
+    "char": "ک",
+    "name": "Kaf",
+    "translit": "k"
+  },
+  {
+    "index": 26,
+    "char": "گ",
+    "name": "Gaf",
+    "translit": "g"
+  },
+  {
+    "index": 27,
+    "char": "ل",
+    "name": "Lam",
+    "translit": "l"
+  },
+  {
+    "index": 28,
+    "char": "م",
+    "name": "Mim",
+    "translit": "m"
+  },
+  {
+    "index": 29,
+    "char": "ن",
+    "name": "Nun",
+    "translit": "n"
+  },
+  {
+    "index": 30,
+    "char": "و",
+    "name": "Vav",
+    "translit": "v"
+  },
+  {
+    "index": 31,
+    "char": "ه",
+    "name": "He (do-chashm)",
+    "translit": "h"
+  },
+  {
+    "index": 32,
+    "char": "ی",
+    "name": "Ye",
+    "translit": "y"
+  }
+]
