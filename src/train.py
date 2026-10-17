@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from src.labels import LETTERS, NUM_CLASSES
 
-IMG_SIZE, BATCH, EPOCHS = 64, 64, 40
+IMG_SIZE, BATCH, EPOCHS = 64, 128, 30
 MODEL_DIR = ROOT / "models"
 MODEL_DIR.mkdir(exist_ok=True)
 tf.keras.utils.set_random_seed(42)
@@ -26,26 +26,23 @@ X_val, y_val = prep(d["X_val"]), d["y_val"]
 X_test, y_test = prep(d["X_test"]), d["y_test"]
 print("train/val/test:", len(X_train), len(X_val), len(X_test))
 
-# ---- model ----
 def conv_block(x, filters, convs=2):
     for _ in range(convs):
         x = layers.Conv2D(filters, 3, padding="same", use_bias=False)(x)
         x = layers.BatchNormalization()(x)
         x = layers.ReLU()(x)
     x = layers.MaxPooling2D()(x)
-    return layers.Dropout(0.25)(x)
+    return layers.Dropout(0.1)(x)
 
 inputs = layers.Input((IMG_SIZE, IMG_SIZE, 1))
-x = layers.RandomRotation(0.03, fill_mode="constant")(inputs)     
-x = layers.RandomTranslation(0.08, 0.08, fill_mode="constant")(x)
-x = layers.RandomZoom(0.12, fill_mode="constant")(x)
-x = layers.GaussianNoise(0.05)(x)
+x = layers.RandomTranslation(0.05, 0.05, fill_mode="constant")(inputs)
+x = conv_block(x, 32, convs=1)
 x = conv_block(x, 32)
 x = conv_block(x, 64)
 x = conv_block(x, 128, convs=1)
 x = layers.Flatten()(x)
 x = layers.Dense(256, activation="relu")(x)
-x = layers.Dropout(0.4)(x)
+x = layers.Dropout(0.3)(x)
 outputs = layers.Dense(NUM_CLASSES, activation="softmax")(x)
 model = models.Model(inputs, outputs)
 model.compile(optimizer="adam", loss="sparse_categorical_crossentropy",
@@ -55,7 +52,7 @@ model.summary()
 cbs = [
     callbacks.EarlyStopping(patience=6, restore_best_weights=True),
     callbacks.ModelCheckpoint(MODEL_DIR / "persian_cnn.keras", save_best_only=True),
-    callbacks.ReduceLROnPlateau(factor=0.5, patience=3),
+    callbacks.ReduceLROnPlateau(factor=0.5, patience=2),
 ]
 hist = model.fit(X_train, y_train, validation_data=(X_val, y_val),
                  batch_size=BATCH, epochs=EPOCHS, callbacks=cbs)

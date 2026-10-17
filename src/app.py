@@ -21,7 +21,7 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title("Persian Alphabet Character Recognition System")
-        root.geometry("860x560")
+        root.geometry("860x640")
         root.resizable(False, False)
         self.recognizer = None
         self.image = None
@@ -50,12 +50,18 @@ class App:
         self.clear_btn = tk.Button(buttons, text="Clear", width=8, command=self.clear)
         for b in (self.upload_btn, self.recog_btn, self.clear_btn):
             b.pack(side="left", padx=3)
+        self.zoom_var = tk.DoubleVar(value=1.0)
+        tk.Scale(left, from_=0.25, to=4.0, resolution=0.05, orient="horizontal",
+                 label="Zoom (image size)", variable=self.zoom_var, length=PREVIEW,
+                 command=self.show_preview).pack()
 
         tk.Label(right, text="Predicted character", font=(FONT, 11)).pack(anchor="w")
         self.char_label = tk.Label(right, text="-", font=(FONT, 96), width=3)
         self.char_label.pack()
         self.name_label = tk.Label(right, text="", font=(FONT, 16))
         self.name_label.pack()
+        self.english_label = tk.Label(right, text="", font=(FONT, 14, "bold"), fg="#1a5fb4")
+        self.english_label.pack()
         self.conf_label = tk.Label(right, text="", font=(FONT, 11))
         self.conf_label.pack()
         self.status_label = tk.Label(right, text="Loading model...", font=(FONT, 10),
@@ -86,6 +92,28 @@ class App:
             self.status_label.config(text="Model not loaded.")
             messagebox.showerror("Could not load model", str(err))
 
+    def zoomed_image(self):
+        """The picture resized by the zoom slider - this is what the algorithm receives."""
+        if self.image is None:
+            return None
+        z = self.zoom_var.get()
+        if abs(z - 1.0) < 1e-6:
+            return self.image
+        interp = cv2.INTER_CUBIC if z > 1 else cv2.INTER_AREA
+        return cv2.resize(self.image, None, fx=z, fy=z, interpolation=interp)
+
+    def show_preview(self, *_):
+        if self.image is None:
+            return
+        img = self.zoomed_image()
+        h, w = img.shape[:2]
+        rgb = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        rgb.thumbnail((PREVIEW, PREVIEW))
+        self.photo = ImageTk.PhotoImage(rgb)
+        self.canvas.delete("all")
+        self.canvas.create_image(PREVIEW // 2, PREVIEW // 2, image=self.photo)
+        self.status_label.config(text=f"Zoom {self.zoom_var.get():.2f}x: image is now {w}x{h} px")
+
     def upload(self):
         path = filedialog.askopenfilename(
             title="Select an image",
@@ -103,11 +131,8 @@ class App:
             return
         self.clear_result()
         self.image = image
-        rgb = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        rgb.thumbnail((PREVIEW, PREVIEW))
-        self.photo = ImageTk.PhotoImage(rgb)
-        self.canvas.delete("all")
-        self.canvas.create_image(PREVIEW // 2, PREVIEW // 2, image=self.photo)
+        self.zoom_var.set(1.0)
+        self.show_preview()
         self.recog_btn.config(state="normal")
         self.status_label.config(text="Image loaded. Click Recognize Character.")
 
@@ -119,7 +144,7 @@ class App:
             messagebox.showerror("Model not loaded", "The model file is missing or failed to load.")
             return
         try:
-            result = self.recognizer.predict_array(self.image)
+            result = self.recognizer.predict_array(self.zoomed_image())
         except Exception as err:
             messagebox.showerror("Recognition failed", str(err))
             return
@@ -133,6 +158,12 @@ class App:
         best = result["best"]
         self.char_label.config(text=best["char"])
         self.name_label.config(text=f'{best["name"]}  ({best["translit"]})')
+        t = best["translit"]
+        if t == "'":
+            english = "No direct English letter (a glottal sound, written ')"
+        else:
+            english = f"English equivalent: {t.upper()}  ({t})"
+        self.english_label.config(text=english)
         self.conf_label.config(
             text=f'Model confidence: {best["confidence"] * 100:.1f}%  (not a guarantee)')
         if result["reliable"]:
@@ -150,12 +181,13 @@ class App:
 
     def clear_result(self):
         self.char_label.config(text="-")
-        for lbl in (self.name_label, self.conf_label, self.top3_label):
+        for lbl in (self.name_label, self.english_label, self.conf_label, self.top3_label):
             lbl.config(text="")
         self.proc_label.config(image="")
         self.status_label.config(fg="#555")
 
     def clear(self):
+        self.zoom_var.set(1.0)
         self.image = None
         self.photo = None
         self._draw_hint()

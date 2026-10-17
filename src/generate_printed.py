@@ -1,3 +1,6 @@
+import math
+import cv2
+import numpy as np
 import csv
 import random
 import re
@@ -16,7 +19,7 @@ from src.labels import LETTERS
 FONT_DIR = ROOT / "fonts"
 OUT_DIR = ROOT / "dataset" / "printed"
 CANVAS = 128          
-VARIANTS = 20          
+VARIANTS = 24          
 FONT_SIZE = 80
 TEST_FAMILIES = {"Almarai"}
 VAL_FAMILIES = {"MarkaziText"}
@@ -48,15 +51,50 @@ def font_has_all_letters(path: Path) -> bool:
     return True
 
 
-def render(font_path: Path, ch: str, stroke: int, angle: float) -> Image.Image:
+def render(font_path: Path, ch: str, stroke: int) -> Image.Image:
     font = ImageFont.truetype(str(font_path), FONT_SIZE)
-    img = Image.new("L", (CANVAS, CANVAS), 255)    
+    img = Image.new("L", (CANVAS, CANVAS), 255)
     ImageDraw.Draw(img).text(
         (CANVAS / 2, CANVAS / 2), ch, font=font, fill=0, anchor="mm",
-        stroke_width=stroke, stroke_fill=0)               
-    if angle:
-        img = img.rotate(angle, resample=Image.BILINEAR, fillcolor=255)
+        stroke_width=stroke, stroke_fill=0)
     return img
+
+
+def transform(img: Image.Image, angle: float, zoom: float) -> Image.Image:
+    arr = np.array(img)
+    if angle:
+        m = cv2.getRotationMatrix2D((CANVAS / 2, CANVAS / 2), angle, 1.0)
+        arr = cv2.warpAffine(arr, m, (CANVAS, CANVAS), flags=cv2.INTER_LINEAR,
+                             borderMode=cv2.BORDER_CONSTANT, borderValue=255)
+    if zoom > 1:
+        c = int(CANVAS / zoom)
+        o = (CANVAS - c) // 2
+        arr = cv2.resize(arr[o:o + c, o:o + c], (CANVAS, CANVAS), interpolation=cv2.INTER_CUBIC)
+    elif zoom < 1:
+        n = max(4, int(CANVAS * zoom))
+        small = cv2.resize(arr, (n, n), interpolation=cv2.INTER_AREA)
+        arr = np.full((CANVAS, CANVAS), 255, np.uint8)
+        o = (CANVAS - n) // 2
+        arr[o:o + n, o:o + n] = small
+    return Image.fromarray(arr)
+
+
+def random_rotation() -> float:
+    if random.random() < 0.8:
+        return random.choice([90, 180, 270]) + random.uniform(-10, 10)
+    return random.uniform(0, 360)
+
+
+def sample_geometry():
+    tilt = random.uniform(-5, 5)
+    r = random.random()
+    if r < 0.35:
+        return tilt, 1.0
+    if r < 0.60:
+        return tilt, math.exp(random.uniform(math.log(0.25), math.log(1.35)))
+    if r < 0.85:
+        return random_rotation(), 1.0
+    return random_rotation(), math.exp(random.uniform(math.log(0.3), math.log(1.2)))
 
 
 def is_good(img: Image.Image) -> bool:
@@ -78,7 +116,7 @@ def main() -> None:
     print(f"Usable fonts: {len(usable)} of {len(font_paths)}")
 
     if OUT_DIR.exists():
-        shutil.rmtree(OUT_DIR)          
+        shutil.rmtree(OUT_DIR)
 
     rows, skipped = [], 0
     for font_path in usable:
@@ -88,10 +126,15 @@ def main() -> None:
             class_dir = OUT_DIR / split / f"{index:02d}"
             class_dir.mkdir(parents=True, exist_ok=True)
             for n in range(VARIANTS):
-                stroke = random.choice([0, 0, 1, 2])
-                angle = random.uniform(-5, 5)
-                img = render(font_path, ch, stroke, angle)
-                if not is_good(img):
+                img = None
+                for _ in range(8):  # retry if the letter is clipped
+                    stroke = random.choice([0, 0, 1, 2])
+                    angle, zoom = sample_geometry()
+                    candidate = transform(render(font_path, ch, stroke), angle, zoom)
+                    if is_good(candidate):
+                        img = candidate
+                        break
+                if img is None:
                     skipped += 1
                     continue
                 file = class_dir / f"{font_path.stem}_{n}.png"
