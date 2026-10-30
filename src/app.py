@@ -15,7 +15,11 @@ from src.predict import ModelNotFoundError, Recognizer
 
 PREVIEW = 300
 FONT = "Segoe UI"
-
+BG      = "#f5f3ff"   # window background (soft lavender)
+CARD    = "#ffffff"   # panels
+ACCENT  = "#6d28d9"   # buttons, highlights
+TEXT    = "#1f2937"
+MUTED   = "#6b7280"
 
 class App:
     def __init__(self, root):
@@ -23,13 +27,16 @@ class App:
         root.title("Persian Alphabet Character Recognition System")
         root.geometry("860x640")
         root.resizable(False, False)
+        root.columnconfigure((0, 1), weight=1)
         self.recognizer = None
         self.image = None
         self.photo = None
         self.proc_photo = None
 
-        tk.Label(root, text="Persian Alphabet Character Recognition System",
-                 font=(FONT, 18, "bold")).grid(row=0, column=0, columnspan=2, pady=(14, 0))
+        header = tk.Frame(root, bg=ACCENT)
+        header.grid(row=0, column=0, columnspan=2, sticky="ew")
+        tk.Label(header, text="Persian Alphabet Character Recognition System",
+                 font=(FONT, 18, "bold"), bg=ACCENT, fg="white").pack(pady=12)
         tk.Label(root, text="Upload a photo of ONE isolated Persian letter (dark ink on light paper).",
                  font=(FONT, 10), fg="#555").grid(row=1, column=0, columnspan=2, pady=(0, 8))
 
@@ -44,18 +51,27 @@ class App:
         self._draw_hint()
         buttons = tk.Frame(left)
         buttons.pack(pady=10)
-        self.upload_btn = tk.Button(buttons, text="Upload Image", width=13, command=self.upload)
+        btn_style = dict(relief="flat", font=(FONT, 10, "bold"), cursor="hand2",
+                         fg="white", activeforeground="white", bd=0, pady=4)
+        self.upload_btn = tk.Button(buttons, text="Upload Image", width=13, command=self.upload,
+                                    bg=ACCENT, activebackground="#5b21b6", **btn_style)
         self.recog_btn = tk.Button(buttons, text="Recognize Character", width=18,
-                                   command=self.recognize, state="disabled")
-        self.clear_btn = tk.Button(buttons, text="Clear", width=8, command=self.clear)
+                                   command=self.recognize, state="disabled",
+                                   bg=ACCENT, activebackground="#5b21b6", **btn_style)
+        self.clear_btn = tk.Button(buttons, text="Clear", width=8, command=self.clear,
+                                   bg="#9ca3af", activebackground="#6b7280", **btn_style)
         for b in (self.upload_btn, self.recog_btn, self.clear_btn):
             b.pack(side="left", padx=3)
         self.zoom_var = tk.DoubleVar(value=1.0)
         tk.Scale(left, from_=0.25, to=4.0, resolution=0.05, orient="horizontal",
                  label="Zoom (image size)", variable=self.zoom_var, length=PREVIEW,
                  command=self.show_preview).pack()
+        self.angle_var = tk.DoubleVar(value=0)
+        tk.Scale(left, from_=-180, to=180, resolution=1, orient="horizontal",
+         label="Rotate (degrees)", variable=self.angle_var, length=PREVIEW,     
+         command=self.show_preview).pack()
 
-        tk.Label(right, text="Predicted character", font=(FONT, 11)).pack(anchor="w")
+        tk.Label(right, text="Predicted character", font=(FONT, 11, "bold")).pack(anchor="w")
         self.char_label = tk.Label(right, text="-", font=(FONT, 96), width=3)
         self.char_label.pack()
         self.name_label = tk.Label(right, text="", font=(FONT, 16))
@@ -93,14 +109,24 @@ class App:
             messagebox.showerror("Could not load model", str(err))
 
     def zoomed_image(self):
-        """The picture resized by the zoom slider - this is what the algorithm receives."""
         if self.image is None:
             return None
+        img = self.image
         z = self.zoom_var.get()
-        if abs(z - 1.0) < 1e-6:
-            return self.image
-        interp = cv2.INTER_CUBIC if z > 1 else cv2.INTER_AREA
-        return cv2.resize(self.image, None, fx=z, fy=z, interpolation=interp)
+        if abs(z - 1.0) > 1e-6:
+            interp = cv2.INTER_CUBIC if z > 1 else cv2.INTER_AREA
+            img = cv2.resize(img, None, fx=z, fy=z, interpolation=interp)
+        a = self.angle_var.get()
+        if abs(a) > 1e-6:
+            h, w = img.shape[:2]
+            M = cv2.getRotationMatrix2D((w / 2, h / 2), a, 1.0)
+            cos, sin = abs(M[0, 0]), abs(M[0, 1])
+            nw, nh = int(h * sin + w * cos), int(h * cos + w * sin)
+            M[0, 2] += nw / 2 - w / 2
+            M[1, 2] += nh / 2 - h / 2
+            img = cv2.warpAffine(img, M, (nw, nh), flags=cv2.INTER_CUBIC,
+                             borderMode=cv2.BORDER_REPLICATE)
+        return img
 
     def show_preview(self, *_):
         if self.image is None:
