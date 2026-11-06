@@ -127,7 +127,7 @@ def main() -> None:
             class_dir.mkdir(parents=True, exist_ok=True)
             for n in range(VARIANTS):
                 img = None
-                for _ in range(8):  # retry if the letter is clipped
+                for _ in range(8):
                     stroke = random.choice([0, 0, 1, 2])
                     angle, zoom = sample_geometry()
                     candidate = transform(render(font_path, ch, stroke), angle, zoom)
